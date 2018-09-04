@@ -45,15 +45,17 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                 self.response_last_time = self.response_this_time
                 self.response_this_time = GPIO.input( SIGNAL_IN )
 
-                if self.response_this_time != self.response_last_time:
-                    if GPIO.LOW == GPIO.input( SIGNAL_IN ):
-                        print "R0"
-                        self.request.sendall( "R0" )
-                    else:
-                        GPIO.output( Relay_CH1, GPIO.HIGH )
-                        GPIO.output( Relay_CH2, GPIO.HIGH )
-                        self.request.sendall( "R1" )
-                        print "R1"
+                if self.response_this_time == self.response_last_time:
+                    if self.response_saved_status != self.response_this_time:
+                        self.response_saved_status = self.response_this_time
+                        if GPIO.LOW == self.response_saved_status:
+                            print "R0"
+                            self.request.sendall( "R0" )
+                        else:
+                            GPIO.output( Relay_CH1, GPIO.HIGH )
+                            GPIO.output( Relay_CH2, GPIO.HIGH )
+                            self.request.sendall( "R1" )
+                            print "R1"
             except:
                 print "Exit Tx"
                 break
@@ -61,6 +63,8 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
     def setup( self ): 
         print "Start serve"
         self.response_this_time = GPIO.input( SIGNAL_IN )
+        self.response_last_time = self.response_this_time 
+        self.response_saved_status = self.response_this_time 
         self.thread_for_send = threading.Thread( target = MyTCPHandler.SendTask, args = ( self, ) )
         self.thread_for_send.setDaemon( True )
         self.thread_for_send.start()
